@@ -1,0 +1,117 @@
+blueprint:
+  name: HVAC Daily Schedule
+  description: Set the target HVAC temperature based on its mode.
+  domain: automation
+
+  input:
+    climate_id:
+      name: Thermostat
+      description: The thermostat to control.
+      selector:
+        entity:
+          domain: climate
+
+    cooling_temp:
+      name: Cool Set Point
+      description: The target temperature when cooling.
+      selector:
+        number:
+          min: 0
+          max: 100
+
+    heating_temp:
+      name: Heat Set Point
+      description: The target temperature when heating.
+      selector:
+        number:
+          min: 0
+          max: 100
+
+    at_time:
+      name: Time
+      description: The time to update this device.
+      selector:
+        time:
+
+    on_monday:
+      name: Monday
+      default: true
+      selector:
+        boolean:
+
+    on_tuesday:
+      name: Tuesday
+      default: true
+      selector:
+        boolean:
+
+    on_wednesday:
+      name: Wednesday
+      default: true
+      selector:
+        boolean:
+
+    on_thursday:
+      name: Thursday
+      default: true
+      selector:
+        boolean:
+
+    on_friday:
+      name: Friday
+      default: true
+      selector:
+        boolean:
+
+    on_saturday:
+      name: Saturday
+      default: true
+      selector:
+        boolean:
+
+    on_sunday:
+      name: Sunday
+      default: true
+      selector:
+        boolean:
+
+variables:
+  weekly_schedule:
+    - !input 'on_monday'
+    - !input 'on_tuesday'
+    - !input 'on_wednesday'
+    - !input 'on_thursday'
+    - !input 'on_friday'
+    - !input 'on_saturday'
+    - !input 'on_sunday'
+
+trigger:
+  - platform: time
+    at: !input 'at_time'
+
+condition:
+  - condition: template
+    value_template: '{{ weekly_schedule[now().weekday()] }}'
+
+action:
+  - choose:
+    - conditions:
+        - condition: state
+          entity_id: !input 'climate_id'
+          state: heat
+      sequence:
+        - service: climate.set_temperature
+          entity_id: !input 'climate_id'
+          data:
+            temperature: !input 'heating_temp'
+    - conditions:
+        - condition: state
+          entity_id: !input 'climate_id'
+          state: cool
+      sequence:
+        - service: climate.set_temperature
+          entity_id: !input 'climate_id'
+          data:
+            temperature: !input 'cooling_temp'
+
+mode: single
